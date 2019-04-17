@@ -8,25 +8,20 @@
 #include <getopt.h>
 #include <string.h>
 #include "./headers/chouette-des.h"
+#include "./headers/chouette-joueurs.h"
 #include "./headers/chouette-common.h"
 
 int main(int argc, char *argv[])
 {
   static struct sockaddr_in addr_serveur;
   struct hostent* host_serveur;
+  char* name_tmp;
+  joueur_t player;
   int sock, port = 4000;
   char* hostname = "localhost";
   char *msg = "bonjour";
   char buffer[TAILLEBUF];
   int nb_octets;
-
-  if(argc >= 2)
-  {
-    hostname = malloc(sizeof(strlen(argv[1]) * sizeof(char)));
-    strcpy(hostname,argv[1]);
-  }
-  if(argc == 3)
-    port = atoi(argv[2]);
 
   sock = creer_socket_tcp(0);
   if(sock == -1)
@@ -53,6 +48,12 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  do
+  {
+    printf("Quel pseudo voulez-vous ? : ");
+    scanf("%s",name_tmp);
+  }while(joueur_set_pseudo(&player,name_tmp) == 0);
+
   nb_octets = write(sock,msg,strlen(msg)+1);
   if(nb_octets == -1)
   {
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
   }
 
   printf("reponse reçu : %s\n",buffer);
-  
+
   close(sock);
 
   return 0;

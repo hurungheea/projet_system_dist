@@ -11,6 +11,7 @@
 #include <string.h>
 
 #define TAILLEBUF 20
+#define NB_CLIENT_MAX 4
 
 int creer_socket_tcp(int port);
 
