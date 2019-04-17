@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <string.h>
 
+#define TAILLEBUF 20
+
 int creer_socket_tcp(int port);
 
 #endif

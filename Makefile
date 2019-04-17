@@ -6,8 +6,8 @@ exes = chouette-server.out
 
 all: $(exec) $(exes)
 
-$(exes): chouette-server.c  chouette-des.o
-	$(CC) $(version) $(gflags) -g -o $(exec) chouette-server.c c/chouette-des.c
+$(exes): chouette-server.c  chouette-des.o chouette-common.o
+	$(CC) $(version) $(gflags) -g -o $(exes) chouette-server.c c/chouette-des.c c/chouette-common.c
 
 $(exec): chouette-client.c  chouette-des.o chouette-common.o
 	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c c/chouette-des.c c/chouette-common.c
