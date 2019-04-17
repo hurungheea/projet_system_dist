@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define NB_DES 3
 #define DES_MIN 1
 #define DES_MAX 6
 

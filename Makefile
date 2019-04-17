@@ -9,17 +9,18 @@ all: $(exec) $(exes)
 $(exes): chouette-server.c  chouette-des.o
 	$(CC) $(version) $(gflags) -g -o $(exec) chouette-server.c c/chouette-des.c
 
-$(exec): chouette-client.c  chouette-des.o
-	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c c/chouette-des.c
+$(exec): chouette-client.c  chouette-des.o chouette-common.o
+	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c c/chouette-des.c c/chouette-common.c
 
 chouette-des.o: c/chouette-des.c
 	$(CC) $(version) $(gflags) -g -c -o objets/chouette-des.o c/chouette-des.c
 
+chouette-common.o: c/chouette-common.c
+	$(CC) $(version) $(gflags) -g -c -o objets/chouette-common.o c/chouette-common.c
 
 clean:
-	rm -f *.o
+	rm -f objets/*.o
 
 mrproper:
-	rm -f toto.tok
 	rm -f $(exec) $(exes)
-	rm -f *.o
+	rm -f objets/*.o
