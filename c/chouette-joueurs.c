@@ -20,9 +20,9 @@ int joueur_set_des(joueur_t* joueur, int i, int val)
 
 int joueur_set_pseudo(joueur_t* joueur, char* pseudo)
 {
-  if(strlen(pseudo) > TAILLEBUF)
+  if(strlen(pseudo) > BUF_PSEUDO)
     return -1;
-  strcpy(joueur -> pseudo,pseudo);
+  strncpy(joueur -> pseudo,pseudo,BUF_PSEUDO);
   return 0;
 }
 

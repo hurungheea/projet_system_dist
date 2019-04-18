@@ -9,9 +9,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "./headers/chouette-des.h"
+#include "./headers/chouette-joueurs.h"
 #include "./headers/chouette-common.h"
 
-int envoie_id();
+int calcul_id();
 
 int main(int argc, char const *argv[])
 {
@@ -21,7 +22,7 @@ int main(int argc, char const *argv[])
   socklen_t lg_addr;
   int port = 4000;
   int socket_ecoute,socket_service;
-  char message[TAILLEBUF];
+  char message[BUF_PSEUDO];
   char *chaine_recue;
   char *reponse = "bien recu";
   int nb_octets;
@@ -62,8 +63,9 @@ int main(int argc, char const *argv[])
       if(canPlay)
       {
         close(socket_ecoute);
-        printf("traitement à effectuer : %d ,%d\n",(int)getpid(),nombre_client);
-        nb_octets = read(socket_service,message,TAILLEBUF);
+        printf("id client : %d ,%d\n",client_pid,nombre_client);
+        client_pid = calcul_id();
+        nb_octets = read(socket_service,&client_pid,BUF_PSEUDO);
         chaine_recue = (char*)malloc(nb_octets * sizeof(char));
         memcpy(chaine_recue,message,nb_octets);
         if(write(socket_service,reponse,strlen(reponse)+1) == -1)
@@ -86,4 +88,10 @@ int main(int argc, char const *argv[])
   }
 
   return 0;
+}
+
+int calcul_id()
+{
+  static int id;
+  return id++;
 }

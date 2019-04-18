@@ -7,20 +7,23 @@
 #include <errno.h>
 #include <getopt.h>
 #include <string.h>
+#include <signal.h>
 #include "./headers/chouette-des.h"
 #include "./headers/chouette-joueurs.h"
 #include "./headers/chouette-common.h"
+
+int handle_sigint(int sock);
 
 int main(int argc, char *argv[])
 {
   static struct sockaddr_in addr_serveur;
   struct hostent* host_serveur;
-  char* name_tmp;
+  char name_tmp[BUF_PSEUDO];
   joueur_t player;
   int sock, port = 4000;
   char* hostname = "localhost";
   char *msg = "bonjour";
-  char buffer[TAILLEBUF];
+  char buffer[BUF_PSEUDO];
   int nb_octets;
 
   sock = creer_socket_tcp(0);
@@ -48,12 +51,15 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+
   do
   {
     printf("Quel pseudo voulez-vous ? : ");
     scanf("%s",name_tmp);
-  }while(joueur_set_pseudo(&player,name_tmp) == 0);
+  }while((strlen(name_tmp) + 1) >= BUF_PSEUDO);
 
+  joueur_set_pseudo(&player,name_tmp);
+  
   nb_octets = write(sock,msg,strlen(msg)+1);
   if(nb_octets == -1)
   {
@@ -61,7 +67,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  nb_octets = read(sock,buffer,TAILLEBUF);
+  nb_octets = read(sock,buffer,BUF_PSEUDO);
   if(nb_octets == -1)
   {
     printf("erreur read\n");
@@ -72,5 +78,11 @@ int main(int argc, char *argv[])
 
   close(sock);
 
+  return 0;
+}
+
+int handle_sigint(int sock)
+{
+  printf("nooooooooooooooooo o\n");
   return 0;
 }

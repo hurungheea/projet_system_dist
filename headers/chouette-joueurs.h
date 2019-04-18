@@ -4,13 +4,13 @@
 #include <string.h>
 #include "./chouette-des.h"
 
-#define TAILLEBUF 16
+#define BUF_PSEUDO 16
 
 typedef struct
 {
   int id;
   des_t des[NB_DES];
-  char pseudo[TAILLEBUF];
+  char pseudo[BUF_PSEUDO];
   int score;
 } joueur_t;
 
