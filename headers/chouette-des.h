@@ -1,9 +1,9 @@
 #ifndef CHOUETTE_DES_H
 #define CHOUETTE_DES_H
 
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #define NB_DES 3
 #define DES_MIN 1
