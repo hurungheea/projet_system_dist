@@ -17,6 +17,7 @@ int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size,mult
 
 int main(int argc, char *argv[])
 {
+  char opt;
   int socket_ecoute = 0,list_size;
   struct sockaddr_in addr_local_tcp;
   multicast_request_t* req;
@@ -31,11 +32,19 @@ int main(int argc, char *argv[])
     perror("get sock name");
   }
 
-  do
+  if(argc == 1)
   {
-    printf("Choisissez un pseudo : \n");
-    scanf("%s",local_user.pseudo);
-  }while((strlen(local_user.pseudo)+1) >= BUF_PSEUDO);
+    do
+    {
+      printf("Choisissez un pseudo : \n");
+      scanf("%s",local_user.pseudo);
+    }while((strlen(local_user.pseudo)+1) >= BUF_PSEUDO);
+  }
+  else
+  {
+    strcpy(&opt,argv[1]);
+    strcpy(local_user.pseudo,&opt);
+  }
 
   if(send_multicast_msg(local_user.pseudo, addr_local_tcp) == -1)
   {
@@ -88,11 +97,11 @@ int main(int argc, char *argv[])
    switch(tampon)
    {
      case CONNECTED:
-      printf("Vous êtes bien connecté\n");
+      printf("\033[32mVous êtes bien connecté.\033[0m\n");
       break;
 
      case NOPLACELEFT:
-      printf("Plus de place disponible\n");
+      printf("\033[91mImpossible de rejoindre la partie en cours car trop de joueurs sont déjà connecter.\033[0m\n");
       break;
 
      default:
@@ -100,7 +109,6 @@ int main(int argc, char *argv[])
       break;
    }
 
-   /* printf("recu : %d\n",list_size); */
    close(socket_service);
    return 0;
  }

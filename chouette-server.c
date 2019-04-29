@@ -14,6 +14,7 @@
 #include "./headers/chouette-joueurs.h"
 
 int get_client_id();
+void affiche_joueur_connecter(multicast_request_t* req,int list_size);
 int send_tcp_id_list(int id, int list_size , multicast_request_t *req);
 
 int main(int argc, char *argv[])
@@ -30,7 +31,7 @@ int main(int argc, char *argv[])
   list_size = 0;
   addrlen = sizeof(addr);
   socket_multicast = socket_udp_multicast_server(&addr);
-
+  req = malloc(sizeof(multicast_request_t));
 
   if(bind(socket_multicast,(struct sockaddr*) &addr, sizeof(addr)) == -1)
   {
@@ -50,30 +51,15 @@ int main(int argc, char *argv[])
     if(nbytes == MULTICAST_MSG_SZ)
     {
       memcpy(&tmp,recv_buffer,sizeof(multicast_request_t));
-      if(list_size < NB_CLIENT_MAX)
-      {
-        if(list_size == 0)
-        {
-          req = malloc(sizeof(multicast_request_t));
-          set_multicast_request(&req[list_size],tmp.pseudo,tmp.addr_client);
-          list_size++;
-        }
 
-        if((strncmp(req[list_size-1].pseudo,tmp.pseudo,BUF_PSEUDO) != 0)&&(list_size > 0))
-        {
-          req = realloc(req,((list_size + 1) * sizeof(multicast_request_t)));
-          memcpy(&req[list_size],&tmp,sizeof(multicast_request_t));
-          list_size++;
-        }
-        send_tcp_id_list(get_client_id(),list_size,req);
-        printf("jouers %s Connecté avec succes\n", req[(list_size - 1)].pseudo);
-      }
-      else
+      if(strncmp(req[list_size-1].pseudo,tmp.pseudo,BUF_PSEUDO) != 0)
       {
-        send_tcp_id_list(-1,-1,NULL);
-        printf("jouers %s n'a pus se connecter :--> PLUS DE PLACE\n",tmp.pseudo);
+        req = realloc(req,((list_size + 1) * sizeof(multicast_request_t)));
+        memcpy(&req[list_size],&tmp,sizeof(multicast_request_t));
+        list_size++;
+        send_tcp_id_list(get_client_id(),list_size,req);
       }
-      if(strcmp(tmp.pseudo,"-1") == 0)
+      if((strcmp(tmp.pseudo,"shutdown") == 0)||(strcmp(tmp.pseudo,"-1") == 0))
       {
         fin = 1;
       }
@@ -89,7 +75,6 @@ int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
   struct sockaddr_in addr_client;
   char* buffy;
   status_t status;
-
   /* Ajout d'un nouveau client à la liste */
   bzero((char*)&addr_client,sizeof(struct sockaddr_in));
   addr_client.sin_family = AF_INET;
@@ -103,12 +88,15 @@ int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
     perror("error connect to client");
   }
 
-  if(list_size == -1)
+  /* Si il y a plus de 4 joueurs connectés */
+  if(list_size > NB_CLIENT_MAX)
   {
+    printf("\033[91mImpossible de connecter le joueur %s, 4 joueurs max en partie.\033[0m\n",req[(list_size - 1)].pseudo);
     status = NOPLACELEFT;
     buffy = (char*)malloc(sizeof(status_t));
     memcpy(buffy,&status,sizeof(status));
-  }else
+  }
+  else
   {
     if(list_size > 1)
     {
@@ -127,11 +115,23 @@ int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
       memcpy(buffy + sizeof(status_t),&id,sizeof(int));
       memcpy(buffy + sizeof(status_t) + sizeof(int),&no_client,sizeof(int));
     }
+    affiche_joueur_connecter(req,list_size);
   }
 
   write(socket_tcp,buffy,BUFFER_TCP_MESSAGE);
 
   return 0;
+}
+
+void affiche_joueur_connecter(multicast_request_t* req,int list_size)
+{
+  int i;
+
+  system("clear");
+  for(i = 0; i < list_size; i++)
+  {
+    printf("\033[32mLe joueurs %s s'est connecté.\033[0m\n",req[i].pseudo);
+  }
 }
 
 int get_client_id()
