@@ -3,15 +3,22 @@
 
 #include <string.h>
 #include "./chouette-des.h"
+#include "./chouette-common.h"
 
 #define BUF_PSEUDO 16
+
+typedef enum
+{
+  CONNECTED,NOTCONNECTED,NOPLACELEFT
+}  status_t;
 
 typedef struct
 {
   int id;
-  des_t des[NB_DES];
-  char pseudo[BUF_PSEUDO];
   int score;
+  des_t des[NB_DES];
+  status_t status;
+  char pseudo[BUF_PSEUDO];
 } joueur_t;
 
 int joueur_set_process_num(joueur_t* joueur, int id);

@@ -12,15 +12,24 @@
 #include "./headers/chouette-des.h"
 #include "./headers/chouette-common.h"
 #include "./headers/chouette-joueurs.h"
-#include "./headers/chouette-tools-client.h"
+
+int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size,multicast_request_t *req);
 
 int main(int argc, char *argv[])
 {
-
-  int finis = 0, socket_tcp;
+  int socket_ecoute = 0,list_size;
   struct sockaddr_in addr_local_tcp;
+  multicast_request_t* req;
+  socklen_t lg_addr;
   joueur_t local_user;
-  socket_tcp = creer_socket_tcp(0,&addr_local_tcp);
+  req = NULL;
+  lg_addr = sizeof(struct sockaddr_in);
+  socket_ecoute = creer_socket_tcp(0);
+
+  if(getsockname(socket_ecoute,(struct sockaddr*)&addr_local_tcp,&lg_addr) == -1)
+  {
+    perror("get sock name");
+  }
 
   do
   {
@@ -33,7 +42,65 @@ int main(int argc, char *argv[])
     perror("erreur sending multicast  message");
   }
 
-  
+  if(reveive_id_list(socket_ecoute,&local_user, &list_size, req) == -1)
+  {
+    perror("erreur reveive id list");
+  }
 
+  close(socket_ecoute);
   exit(EXIT_SUCCESS);
+ }
+
+ int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size, multicast_request_t *req)
+ {
+   int socket_service, recv_tcp;
+   struct sockaddr_in addr_server;
+   socklen_t lg_addr;
+   char buffer[BUFFER_TCP_MESSAGE];
+   status_t tampon;
+
+   lg_addr = sizeof(struct sockaddr_in);
+
+   /* attende de réponse du serveur */
+   if(listen(socket_ecoute,5) == -1)
+   {
+     perror("erreur listen\n");
+     return -1;
+   }
+
+   if((socket_service = accept(socket_ecoute,(struct sockaddr*)&addr_server, &lg_addr)) == -1)
+   {
+     perror("error accept");
+     return -1;
+   }
+
+   while(recv_tcp != BUFFER_TCP_MESSAGE)
+   {
+     if((recv_tcp = read(socket_service,buffer,BUFFER_TCP_MESSAGE)) == -1)
+     {
+       perror("error read");
+       return -1;
+     }
+   }
+
+   memcpy(&tampon,buffer,sizeof(int));
+
+   switch(tampon)
+   {
+     case CONNECTED:
+      printf("Vous êtes bien connecté\n");
+      break;
+
+     case NOPLACELEFT:
+      printf("Plus de place disponible\n");
+      break;
+
+     default:
+      printf("default\n");
+      break;
+   }
+
+   /* printf("recu : %d\n",list_size); */
+   close(socket_service);
+   return 0;
  }
