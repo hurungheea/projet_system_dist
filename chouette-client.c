@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
   if(send_multicast_msg(local_user.pseudo, addr_local_tcp) == -1)
   {
-    perror("erreur sending multicast  message");
+    perror("erreur sending multicast message");
   }
 
   if(reveive_id_list(socket_ecoute,&local_user, &list_size, req) == -1)
@@ -94,21 +94,19 @@ int main(int argc, char *argv[])
      }
    }
 
-   memcpy(&tampon,buffer,sizeof(int));
+   memcpy(&tampon,buffer,sizeof(status_t));
 
    switch(tampon)
    {
      case CONNECTED:
       printf("\033[32mVous êtes bien connecté.\033[0m\n");
-      memcpy(&local_user -> id,buffer + sizeof(status_t),sizeof(int));
-      printf("local_user : %d\n",local_user->id);
+      memcpy(&local_user->id, buffer + sizeof(status_t),sizeof(int));
+      memcpy(list_size, buffer + sizeof(status_t) + sizeof(int),sizeof(int));
 
-      memcpy(&local_user->id, buffer + sizeof(status_t) + sizeof(int),sizeof(int));
-      memcpy(&list_size, buffer + sizeof(status_t) + sizeof(int) + sizeof(int),sizeof(int));
-
-      printf("list_size : %d\n",(*list_size));
       if(*list_size > 0)
-        req = malloc(((*list_size)+1) * sizeof(multicast_request_t));
+        req = malloc((*list_size) * sizeof(multicast_request_t));
+      else
+        req = NULL;
       break;
 
      case NOPLACELEFT:
@@ -118,7 +116,6 @@ int main(int argc, char *argv[])
     default:
       printf("Default switch case\n");
       break;
-
    }
 
    close(socket_service);

@@ -52,16 +52,16 @@ int main(int argc, char *argv[])
     {
       memcpy(&tmp,recv_buffer,sizeof(multicast_request_t));
 
-      if(strncmp(req[list_size-1].pseudo,tmp.pseudo,BUF_PSEUDO) != 0)
+      if((strcmp(tmp.pseudo,"shutdown") == 0)||(strcmp(tmp.pseudo,"-1") == 0))
+      {
+        fin = 1;
+      }
+      else if(strncmp(req[list_size-1].pseudo,tmp.pseudo,BUF_PSEUDO) != 0)
       {
         req = realloc(req,((list_size + 1) * sizeof(multicast_request_t)));
         memcpy(&req[list_size],&tmp,sizeof(multicast_request_t));
         list_size++;
         send_tcp_id_list(get_client_id(),list_size,req);
-      }
-      if((strcmp(tmp.pseudo,"shutdown") == 0)||(strcmp(tmp.pseudo,"-1") == 0))
-      {
-        fin = 1;
       }
     }
   }
@@ -73,7 +73,7 @@ int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
 {
   int socket_tcp, no_client = -1;
   struct sockaddr_in addr_client;
-  char* buffy;
+  char buffy[BUFFER_TCP_MESSAGE];
   status_t status;
   /* Ajout d'un nouveau client à la liste */
   bzero((char*)&addr_client,sizeof(struct sockaddr_in));
@@ -93,14 +93,12 @@ int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
   {
     printf("\033[91mImpossible de connecter le joueur %s, 4 joueurs max en partie.\033[0m\n",req[(list_size - 1)].pseudo);
     status = NOPLACELEFT;
-    buffy = (char*)malloc(sizeof(status_t));
     memcpy(buffy,&status,sizeof(status));
   }
   else
   {
     if(list_size > 1)
     {
-      buffy = (char *)malloc((2 * sizeof(int)) + (list_size * sizeof(multicast_request_t)));
       status = CONNECTED;
       memcpy(buffy, &status,sizeof(status_t));
       memcpy(buffy + sizeof(status_t), &id,sizeof(int));
@@ -110,7 +108,6 @@ int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
     else
     {
       status = CONNECTED;
-      buffy = malloc(sizeof(int) + sizeof(int));
       memcpy(buffy, &status,sizeof(status_t));
       memcpy(buffy + sizeof(status_t),&id,sizeof(int));
       memcpy(buffy + sizeof(status_t) + sizeof(int),&no_client,sizeof(int));
