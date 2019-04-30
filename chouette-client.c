@@ -19,7 +19,7 @@ int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size,mult
 int main(int argc, char *argv[])
 {
   char opt;
-  int socket_ecoute = 0,list_size;
+  int socket_ecoute = 0,list_size = 0;
   struct sockaddr_in addr_local_tcp;
   multicast_request_t* req;
   socklen_t lg_addr;
@@ -102,9 +102,13 @@ int main(int argc, char *argv[])
       printf("\033[32mVous êtes bien connecté.\033[0m\n");
       memcpy(&local_user -> id,buffer + sizeof(status_t),sizeof(int));
       printf("local_user : %d\n",local_user->id);
-      memcpy(&list_size, buffer + (sizeof(status_t) + sizeof(int)),sizeof(int));
-      printf("list_size : %d\n",*list_size);
-      req = malloc((*list_size) * sizeof(multicast_request_t));
+
+      memcpy(&local_user->id, buffer + sizeof(status_t) + sizeof(int),sizeof(int));
+      memcpy(&list_size, buffer + sizeof(status_t) + sizeof(int) + sizeof(int),sizeof(int));
+
+      printf("list_size : %d\n",(*list_size));
+      if(*list_size > 0)
+        req = malloc(((*list_size)+1) * sizeof(multicast_request_t));
       break;
 
      case NOPLACELEFT:

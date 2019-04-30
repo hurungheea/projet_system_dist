@@ -126,7 +126,6 @@ int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
 void affiche_joueur_connecter(multicast_request_t* req,int list_size)
 {
   int i;
-
   system("clear");
   for(i = 0; i < list_size; i++)
   {
