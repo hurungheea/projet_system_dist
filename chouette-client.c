@@ -13,6 +13,7 @@
 #include "./headers/chouette-common.h"
 #include "./headers/chouette-joueurs.h"
 
+void lancement_partie(char *buffer);
 int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size,multicast_request_t *req);
 
 int main(int argc, char *argv[])
@@ -53,7 +54,8 @@ int main(int argc, char *argv[])
 
   if(reveive_id_list(socket_ecoute,&local_user, &list_size, req) == -1)
   {
-    perror("erreur reveive id list");
+    printf("\033[91mImpossible de rejoindre la partie en cours car trop de joueurs sont déjà connecter.\033[0m\n");
+    exit(EXIT_FAILURE);
   }
 
   close(socket_ecoute);
@@ -98,17 +100,28 @@ int main(int argc, char *argv[])
    {
      case CONNECTED:
       printf("\033[32mVous êtes bien connecté.\033[0m\n");
+      memcpy(&local_user -> id,buffer + sizeof(status_t),sizeof(int));
+      printf("local_user : %d\n",local_user->id);
+      memcpy(&list_size, buffer + (sizeof(status_t) + sizeof(int)),sizeof(int));
+      printf("list_size : %d\n",*list_size);
+      req = malloc((*list_size) * sizeof(multicast_request_t));
       break;
 
      case NOPLACELEFT:
-      printf("\033[91mImpossible de rejoindre la partie en cours car trop de joueurs sont déjà connecter.\033[0m\n");
+      return -1;
       break;
 
-     default:
-      printf("default\n");
+    default:
+      printf("Default switch case\n");
       break;
+
    }
 
    close(socket_service);
    return 0;
  }
+
+void lancement_partie(char *buffer)
+{
+
+}
