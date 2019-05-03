@@ -35,4 +35,5 @@ int socket_udp_multicast_server(struct sockaddr_in* addr);
 
 int send_multicast_msg(char *pseudo, struct sockaddr_in addr_local_tcp);
 void set_multicast_request(multicast_request_t *request,char *pseudo, struct sockaddr_in user);
+
 #endif

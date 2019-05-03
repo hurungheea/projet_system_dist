@@ -10,16 +10,17 @@
 #include <string.h>
 #include <signal.h>
 #include "./headers/chouette-des.h"
-#include "./headers/chouette-common.h"
 #include "./headers/chouette-joueurs.h"
+#include "./headers/chouette-common.h"
 
-void lancement_partie(char *buffer);
+void lancement_partie(multicast_request_t* req,int list_size);
 int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size,multicast_request_t *req);
 
 int main(int argc, char *argv[])
 {
   char opt;
-  int socket_ecoute = 0,list_size = 0;
+  int socket_all_send[3];
+  int socket_ecoute = 0,list_size = 0, i = 0;
   struct sockaddr_in addr_local_tcp;
   multicast_request_t* req;
   socklen_t lg_addr;
@@ -56,6 +57,18 @@ int main(int argc, char *argv[])
   {
     printf("\033[91mImpossible de rejoindre la partie en cours car trop de joueurs sont déjà connecter.\033[0m\n");
     exit(EXIT_FAILURE);
+  }
+
+  /* création connexion client */
+  for(i=0;i<3;i++)
+  {
+    socket_all_send[i] = creer_socket_tcp(0);
+    if(connect(socket_all_send[i],(struct sockaddr*)&req[i].addr_client,sizeof(struct sockaddr_in)) == -1)
+    {
+      perror("error connect to client");
+    }
+    write(socket_all_send[i],"OK",strlen("OK"));
+    close(socket_all_send[i]);
   }
 
   close(socket_ecoute);
@@ -121,8 +134,3 @@ int main(int argc, char *argv[])
    close(socket_service);
    return 0;
  }
-
-void lancement_partie(char *buffer)
-{
-
-}
