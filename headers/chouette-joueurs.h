@@ -3,7 +3,6 @@
 
 #include <string.h>
 #include "./chouette-des.h"
-#include "./chouette-common.h"
 
 #define BUF_PSEUDO 16
 
