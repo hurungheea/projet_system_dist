@@ -43,5 +43,5 @@ int send_multicast_msg(char *pseudo, struct sockaddr_in addr_local_tcp);
 void set_multicast_request(multicast_request_t *request,char *pseudo, struct sockaddr_in user);
 
 int send_tcp_id_list(int id, int list_size , multicast_request_t *req);
-int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size,multicast_request_t **req_ptr);
+int reveive_id_list(int socket_ecoute, int *id, int* list_size,multicast_request_t **req_ptr);
 #endif

@@ -20,11 +20,13 @@ int main(int argc, char *argv[])
 {
   char opt;
   joueur_t* j_list;
-  int socket_ecoute = 0,list_size = 0;
+  int socket_ecoute = 0,list_size = 0, id = 0;
   struct sockaddr_in addr_local_tcp;
   multicast_request_t* req;
   socklen_t lg_addr;
   joueur_t local_user;
+
+  bzero(&local_user,sizeof(joueur_t));
 
   req = NULL;
   lg_addr = sizeof(struct sockaddr_in);
@@ -55,13 +57,13 @@ int main(int argc, char *argv[])
     display_error(NULL,argv[0],__FILE__,__LINE__);
     exit(EXIT_FAILURE);
   }
-  printf("pseudo addr av recv : %p\n",(void*)&local_user);
-  if(reveive_id_list(socket_ecoute,&local_user, &list_size, &req) == -1)
+
+  if(reveive_id_list(socket_ecoute,&id, &list_size, &req) == -1)
   {
     display_error(NULL,argv[0],__FILE__,__LINE__);
     exit(EXIT_FAILURE);
   }
-  printf("pseudo.id ap recv : %d\n",local_user.id);
+  local_user.id = id;
 
   if(list_size < 0)
   {
@@ -72,7 +74,6 @@ int main(int argc, char *argv[])
   }
   else
   {
-    printf("pseudo.id main : %d\n",local_user.id);
     if(connect_all_client(&j_list, &req, local_user, list_size) == -1) /* attend les connexion TCP des autres clients */
     {
       exit(EXIT_FAILURE);
@@ -95,7 +96,7 @@ int wait_client_tcp(joueur_t** j_list_ptr, int socket_ecoute, int list_size)
   char tampon[BUFFER_TCP_MESSAGE];
   struct sockaddr_in addr_client;
   socklen_t size_addr;
-  int id_test;
+  int id_tampon;
   char pseudo[BUF_PSEUDO];
 
   bzero(&tampon,BUFFER_TCP_MESSAGE);
@@ -114,9 +115,13 @@ int wait_client_tcp(joueur_t** j_list_ptr, int socket_ecoute, int list_size)
      perror("error accept");
    }
    read(j_list_ptr[i]->socket_recv,&tampon,BUFFER_TCP_MESSAGE);
-   memcpy(&id_test,tampon,sizeof(int));
+   memcpy(&id_tampon,tampon,sizeof(int));
    memcpy(pseudo,tampon + sizeof(int),BUF_PSEUDO);
+   j_list_ptr[i] -> id = id_tampon;
+   strncpy(j_list_ptr[i] -> pseudo,pseudo,BUF_PSEUDO);
 
+
+   printf("pseudo : %s, %d\n",j_list_ptr[i] -> pseudo,j_list_ptr[i] -> id);
    i++;
   }
   printf("3 clients sont connectés\n");
@@ -129,7 +134,6 @@ int connect_all_client(joueur_t** j_list_ptr, multicast_request_t** req, joueur_
   socklen_t lg_addr;
   char* buffy;
 
-  printf("pseudo.id connect : %d\n",local_user.id);
   buffy = (char*)malloc(sizeof(int) + (BUF_PSEUDO * sizeof(char)));
   lg_addr = sizeof(struct sockaddr);
 
@@ -138,7 +142,6 @@ int connect_all_client(joueur_t** j_list_ptr, multicast_request_t** req, joueur_
 
   for(i = 0; i < (list_size-1); i++)
   {
-    printf("pseudo : %s\n",req[i]->pseudo);
     j_list_ptr[i] = calloc(1,sizeof(joueur_t));
     j_list_ptr[i] -> socket_send = creer_socket_tcp(0);
     if(connect(j_list_ptr[i] -> socket_send,(struct sockaddr*)&req[i]->addr_client,lg_addr))
