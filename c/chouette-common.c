@@ -149,7 +149,7 @@ int send_multicast_msg(char *pseudo, struct sockaddr_in addr_local_tcp)
 int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size, multicast_request_t **req_ptr)
 {
   int socket_service, recv_tcp;
-  int i;
+  int i, id_aux = 0;
   struct sockaddr_in addr_server;
   socklen_t lg_addr;
   char buffer[BUFFER_TCP_MESSAGE];
@@ -187,7 +187,9 @@ int reveive_id_list(int socket_ecoute, joueur_t* local_user, int* list_size, mul
   {
     case CONNECTED:
      printf("\033[32mVous êtes bien connecté.\033[0m\n");
-     memcpy(&local_user->id, buffer + sizeof(status_t),sizeof(int));
+     memcpy(&id_aux, buffer + sizeof(status_t),sizeof(int));
+     local_user-> id = id_aux;
+     printf("received id : %p\n",(void*)local_user);
      memcpy(list_size, buffer + sizeof(status_t) + sizeof(int),sizeof(int));
 
      if(*list_size > 0)
