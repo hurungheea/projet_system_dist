@@ -1,6 +1,8 @@
 #!/bin/bash
 
-for ((i = 1;i <= 6; i ++))
+gnome-terminal -e ./chouette-server.out
+
+for ((i = 1;i <= 4; i ++))
 do
-  ./chouette-client.out $i
+  gnome-terminal -e "./chouette-client.out $i"
 done

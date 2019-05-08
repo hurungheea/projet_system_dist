@@ -8,7 +8,7 @@
 
 typedef enum
 {
-  CONNECTED,NOTCONNECTED,NOPLACELEFT
+  CONNECTED,NOTCONNECTED,NOPLACELEFT,MASTER
 }  status_t;
 
 typedef struct

@@ -13,8 +13,7 @@
 #include "./headers/chouette-common.h"
 #include "./headers/chouette-joueurs.h"
 
-int wait_client_tcp(joueur_t** j_list, int socket_ecoute, int list_size);
-int connect_all_client(joueur_t** j_list, multicast_request_t** req, joueur_t local_user,int list_size);
+void start_game(joueur_t** j_list_ptr,int socket_ecoute, joueur_t* local_user);
 
 int main(int argc, char *argv[])
 {
@@ -83,6 +82,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
   }
+  start_game(&j_list,socket_ecoute,&local_user);
 
   close(socket_ecoute);
   free(req);
@@ -90,65 +90,51 @@ int main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
  }
 
-int wait_client_tcp(joueur_t** j_list_ptr, int socket_ecoute, int list_size)
-{
-  int i = 0;
-  char tampon[BUFFER_TCP_MESSAGE];
-  struct sockaddr_in addr_client;
-  socklen_t size_addr;
-  int id_tampon;
-  char pseudo[BUF_PSEUDO];
+ void start_game(joueur_t** j_list_ptr,int socket_ecoute, joueur_t* local_user)
+ {
+   int horloge_local[NB_CLIENT_MAX] = {0};
+   int fini = 0, master = 0,master_id , i, res = 0;
+   char* msg = NULL;
+   char tmp[BUFFER_TCP_MESSAGE];
+   status_t st;
+   char car = '\0';
+   bzero(&tmp,BUFFER_TCP_MESSAGE);
 
-  bzero(&tampon,BUFFER_TCP_MESSAGE);
-
-  size_addr = sizeof(struct sockaddr_in);
-
-  if(list_size == -1)
-    list_size = 1;
-
-  while(i < ((NB_CLIENT_MAX -1) - (list_size -1)))
-  {
-   j_list_ptr[i] = calloc(1,sizeof(joueur_t));
-   j_list_ptr[i] -> socket_recv = accept(socket_ecoute,(struct sockaddr*) &addr_client, &size_addr);
-   if(j_list_ptr[i] -> socket_recv == -1)
+   do
    {
-     perror("error accept");
+     printf("Commencer une nouvelle partie ? (o|N)\n");
+     scanf("%c%*c",&car);
+   }while((car != 'o')&&(car != 'O')&&(car != 'n')&&(car != 'N'));
+
+   if((car == 'o')||(car == 'O'))
+   {
+     master = 1;
+     st = MASTER;
+     msg = (char*)malloc(sizeof(status_t) + sizeof(int) + (NB_CLIENT_MAX * sizeof(int)));
+     memcpy(msg,&st,sizeof(status_t));
+     memcpy(msg + sizeof(status_t),&local_user->id,sizeof(int));
+     memcpy(msg + sizeof(status_t) + sizeof(int),horloge_local,(NB_CLIENT_MAX * sizeof(int)));
+     for(i = 0;i < (NB_CLIENT_MAX - 1);i++)
+     {
+       res = write(j_list_ptr[i] -> socket_send,msg,BUFFER_TCP_MESSAGE);
+       fflush(stdout);
+       printf("write : %d\n",res);
+     }
    }
-   read(j_list_ptr[i]->socket_recv,&tampon,BUFFER_TCP_MESSAGE);
-   memcpy(&id_tampon,tampon,sizeof(int));
-   memcpy(pseudo,tampon + sizeof(int),BUF_PSEUDO);
-   j_list_ptr[i] -> id = id_tampon;
-   strncpy(j_list_ptr[i] -> pseudo,pseudo,BUF_PSEUDO);
+   else
+   {
+     res = read(socket_ecoute, &tmp, BUFFER_TCP_MESSAGE);
+     memcpy(&st,tmp,sizeof(status_t));
+     memcpy(&master_id,tmp + sizeof(status_t),sizeof(status_t));
+     printf("res : %d\nmaster id : %d\n",res,master_id);
+     master = 0;
+     master = master;
+   }
 
+   horloge_local[0] = horloge_local[1];
 
-   printf("pseudo : %s, %d\n",j_list_ptr[i] -> pseudo,j_list_ptr[i] -> id);
-   i++;
-  }
-  printf("3 clients sont connectés\n");
-  return 0;
-}
+   while(!fini)
+   {
 
-int connect_all_client(joueur_t** j_list_ptr, multicast_request_t** req, joueur_t local_user,int list_size)
-{
-  int i;
-  socklen_t lg_addr;
-  char* buffy;
-
-  buffy = (char*)malloc(sizeof(int) + (BUF_PSEUDO * sizeof(char)));
-  lg_addr = sizeof(struct sockaddr);
-
-  memcpy(buffy,&local_user.id,sizeof(int));
-  memcpy(buffy + sizeof(int),&local_user.pseudo,BUF_PSEUDO);
-
-  for(i = 0; i < (list_size-1); i++)
-  {
-    j_list_ptr[i] = calloc(1,sizeof(joueur_t));
-    j_list_ptr[i] -> socket_send = creer_socket_tcp(0);
-    if(connect(j_list_ptr[i] -> socket_send,(struct sockaddr*)&req[i]->addr_client,lg_addr))
-    {
-      perror("error connect");
-    }
-    write(j_list_ptr[i] -> socket_send,buffy,BUFFER_TCP_MESSAGE);
-  }
-  return 0;
-}
+   }
+ }

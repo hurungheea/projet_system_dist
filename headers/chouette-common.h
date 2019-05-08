@@ -36,6 +36,9 @@ int get_client_id();
 int creer_socket_tcp(int port);
 void affiche_joueur_connecter(multicast_request_t* req,int list_size);
 
+int wait_client_tcp(joueur_t** j_list, int socket_ecoute, int list_size);
+int connect_all_client(joueur_t** j_list, multicast_request_t** req, joueur_t local_user,int list_size);
+
 int socket_udp_multicast_client(struct sockaddr_in* addr);
 int socket_udp_multicast_server(struct sockaddr_in* addr);
 

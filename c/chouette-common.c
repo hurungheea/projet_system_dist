@@ -217,6 +217,69 @@ int reveive_id_list(int socket_ecoute,int *id, int* list_size, multicast_request
   return 0;
 }
 
+int wait_client_tcp(joueur_t** j_list_ptr, int socket_ecoute, int list_size)
+{
+  int i = 0;
+  char tampon[BUFFER_TCP_MESSAGE];
+  struct sockaddr_in addr_client;
+  socklen_t size_addr;
+  int id_tampon;
+  char pseudo[BUF_PSEUDO];
+
+  bzero(&tampon,BUFFER_TCP_MESSAGE);
+
+  size_addr = sizeof(struct sockaddr_in);
+
+  if(list_size == -1)
+    list_size = 1;
+
+  while(i < ((NB_CLIENT_MAX -1) - (list_size -1)))
+  {
+   j_list_ptr[i] = calloc(1,sizeof(joueur_t));
+   j_list_ptr[i] -> socket_recv = accept(socket_ecoute,(struct sockaddr*) &addr_client, &size_addr);
+   if(j_list_ptr[i] -> socket_recv == -1)
+   {
+     perror("error accept");
+   }
+   read(j_list_ptr[i]->socket_recv,&tampon,BUFFER_TCP_MESSAGE);
+   memcpy(&id_tampon,tampon,sizeof(int));
+   memcpy(pseudo,tampon + sizeof(int),BUF_PSEUDO);
+   j_list_ptr[i] -> id = id_tampon;
+   strncpy(j_list_ptr[i] -> pseudo,pseudo,BUF_PSEUDO);
+
+
+   printf("pseudo : %s, %d\n",j_list_ptr[i] -> pseudo,j_list_ptr[i] -> id);
+   i++;
+  }
+  printf("3 clients sont connectés\n");
+  return 0;
+}
+
+int connect_all_client(joueur_t** j_list_ptr, multicast_request_t** req, joueur_t local_user,int list_size)
+{
+  int i;
+  socklen_t lg_addr;
+  char* buffy;
+
+  buffy = (char*)malloc(sizeof(int) + (BUF_PSEUDO * sizeof(char)));
+  lg_addr = sizeof(struct sockaddr);
+
+  memcpy(buffy,&local_user.id,sizeof(int));
+  memcpy(buffy + sizeof(int),&local_user.pseudo,BUF_PSEUDO);
+
+  for(i = 0; i < (list_size-1); i++)
+  {
+    j_list_ptr[i] = calloc(1,sizeof(joueur_t));
+    j_list_ptr[i] -> socket_send = creer_socket_tcp(0);
+    if(connect(j_list_ptr[i] -> socket_send,(struct sockaddr*)&req[i]->addr_client,lg_addr))
+    {
+      perror("error connect");
+    }
+    write(j_list_ptr[i] -> socket_send,buffy,BUFFER_TCP_MESSAGE);
+  }
+  return 0;
+}
+
 int send_tcp_id_list(int id, int list_size , multicast_request_t *req)
 {
   int socket_tcp, no_client = -1;
