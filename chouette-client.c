@@ -9,6 +9,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <signal.h>
+#include <pthread.h>
 #include "./headers/chouette-des.h"
 #include "./headers/chouette-common.h"
 #include "./headers/chouette-joueurs.h"
@@ -123,7 +124,9 @@ int main(int argc, char *argv[])
    }
    else
    {
-     res = read(socket_ecoute, &tmp, BUFFER_TCP_MESSAGE);
+
+
+     read(socket_ecoute, &tmp, BUFFER_TCP_MESSAGE);
      memcpy(&st,tmp,sizeof(status_t));
      memcpy(&master_id,tmp + sizeof(status_t),sizeof(status_t));
      printf("res : %d\nmaster id : %d\n",res,master_id);
