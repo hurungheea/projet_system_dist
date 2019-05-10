@@ -14,6 +14,7 @@
 #include "./headers/chouette-common.h"
 #include "./headers/chouette-joueurs.h"
 
+void *scan_thread(int socket_ecoute);
 void start_game(joueur_t** j_list_ptr,int socket_ecoute, joueur_t* local_user);
 
 int main(int argc, char *argv[])
@@ -83,6 +84,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
   }
+  printf("jszjkh\n");
   start_game(&j_list,socket_ecoute,&local_user);
 
   close(socket_ecoute);
@@ -94,50 +96,36 @@ int main(int argc, char *argv[])
  void start_game(joueur_t** j_list_ptr,int socket_ecoute, joueur_t* local_user)
  {
    int horloge_local[NB_CLIENT_MAX] = {0};
-   int fini = 0, master = 0,master_id , i, res = 0;
-   char* msg = NULL;
+   pthread_t sca_thread;
    char tmp[BUFFER_TCP_MESSAGE];
-   status_t st;
-   char car = '\0';
    bzero(&tmp,BUFFER_TCP_MESSAGE);
 
-   do
+   if(pthread_create(&sca_thread,NULL,(void*)scan_thread,NULL) == -1)
    {
-     printf("Commencer une nouvelle partie ? (o|N)\n");
-     scanf("%c%*c",&car);
-   }while((car != 'o')&&(car != 'O')&&(car != 'n')&&(car != 'N'));
-
-   if((car == 'o')||(car == 'O'))
-   {
-     master = 1;
-     st = MASTER;
-     msg = (char*)malloc(sizeof(status_t) + sizeof(int) + (NB_CLIENT_MAX * sizeof(int)));
-     memcpy(msg,&st,sizeof(status_t));
-     memcpy(msg + sizeof(status_t),&local_user->id,sizeof(int));
-     memcpy(msg + sizeof(status_t) + sizeof(int),horloge_local,(NB_CLIENT_MAX * sizeof(int)));
-     for(i = 0;i < (NB_CLIENT_MAX - 1);i++)
-     {
-       res = write(j_list_ptr[i] -> socket_send,msg,BUFFER_TCP_MESSAGE);
-       fflush(stdout);
-       printf("write : %d\n",res);
-     }
+     perror("error thread");
    }
-   else
-   {
 
+  if(pthread_join(sca_thread, NULL))
+  {
+    perror("pthread_join");
+  }
 
-     read(socket_ecoute, &tmp, BUFFER_TCP_MESSAGE);
-     memcpy(&st,tmp,sizeof(status_t));
-     memcpy(&master_id,tmp + sizeof(status_t),sizeof(status_t));
-     printf("res : %d\nmaster id : %d\n",res,master_id);
-     master = 0;
-     master = master;
-   }
+   printf("après thread\n");
 
    horloge_local[0] = horloge_local[1];
-
-   while(!fini)
+   while(1)
    {
 
    }
  }
+
+void* scan_thread(int socket_ecoute)
+{
+  char car='\0';
+  do
+  {
+    printf("Commencer une nouvelle partie ? (o|N)\n");
+    scanf("%c%*c",&car);
+  }while((car != 'o')&&(car != 'O')&&(car != 'n')&&(car != 'N'));
+  pthread_exit(NULL);
+}

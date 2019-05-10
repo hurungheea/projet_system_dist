@@ -1,6 +1,6 @@
 CC = gcc
 gflags = -Wall -Werror -D_GNU_SOURCE
-version = -std=c89 -pedantic
+version = #-std=c89 -pedantic
 exec = chouette-client.out
 exes = chouette-server.out
 
@@ -10,7 +10,7 @@ $(exes): chouette-server.c  chouette-des.o chouette-joueurs.o chouette-common.o
 	$(CC) $(version) $(gflags) -g -o $(exes) chouette-server.c c/chouette-des.c c/chouette-joueurs.c c/chouette-common.c
 
 $(exec): chouette-client.c  chouette-des.o chouette-joueurs.o chouette-common.o
-	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c c/chouette-des.c c/chouette-joueurs.c c/chouette-common.c
+	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c c/chouette-des.c c/chouette-joueurs.c c/chouette-common.c -lpthread
 
 chouette-des.o: c/chouette-des.c
 	$(CC) $(version) $(gflags) -g -c -o objets/chouette-des.o c/chouette-des.c
