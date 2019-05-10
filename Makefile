@@ -7,10 +7,10 @@ exes = chouette-server.out
 all: $(exec) $(exes)
 
 $(exes): chouette-server.c  chouette-des.o chouette-joueurs.o chouette-common.o
-	$(CC) $(version) $(gflags) -g -o $(exes) chouette-server.c c/chouette-des.c c/chouette-joueurs.c c/chouette-common.c
+	$(CC) $(version) $(gflags) -g -o $(exes) chouette-server.c objets/chouette-des.o objets/chouette-joueurs.o objets/chouette-common.o
 
 $(exec): chouette-client.c  chouette-des.o chouette-joueurs.o chouette-common.o
-	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c c/chouette-des.c c/chouette-joueurs.c c/chouette-common.c -lpthread
+	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c objets/chouette-des.o objets/chouette-joueurs.o objets/chouette-common.o -lpthread
 
 chouette-des.o: c/chouette-des.c
 	$(CC) $(version) $(gflags) -g -c -o objets/chouette-des.o c/chouette-des.c

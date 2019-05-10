@@ -14,7 +14,7 @@
 #include "./headers/chouette-common.h"
 #include "./headers/chouette-joueurs.h"
 
-void *scan_thread(int socket_ecoute);
+void *scan_thread(char* caractere);
 void start_game(joueur_t** j_list_ptr,int socket_ecoute, joueur_t* local_user);
 
 int main(int argc, char *argv[])
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if(reveive_id_list(socket_ecoute,&id, &list_size, &req) == -1)
+  if(receive_id_list(socket_ecoute,&id, &list_size, &req) == -1)
   {
     display_error(NULL,argv[0],__FILE__,__LINE__);
     exit(EXIT_FAILURE);
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
   }
-  printf("jszjkh\n");
+
   start_game(&j_list,socket_ecoute,&local_user);
 
   close(socket_ecoute);
@@ -95,12 +95,17 @@ int main(int argc, char *argv[])
 
  void start_game(joueur_t** j_list_ptr,int socket_ecoute, joueur_t* local_user)
  {
-   int horloge_local[NB_CLIENT_MAX] = {0};
+   int horloge_local[NB_CLIENT_MAX] = {0}, i,res = 0;
+   status_t status;
    pthread_t sca_thread;
    char tmp[BUFFER_TCP_MESSAGE];
    bzero(&tmp,BUFFER_TCP_MESSAGE);
+   char car='\0';
+   char *msg = NULL;
 
-   if(pthread_create(&sca_thread,NULL,(void*)scan_thread,NULL) == -1)
+   horloge_local[0] = horloge_local[2];
+
+   if(pthread_create(&sca_thread,NULL,(void*)scan_thread,&car) == -1)
    {
      perror("error thread");
    }
@@ -110,22 +115,36 @@ int main(int argc, char *argv[])
     perror("pthread_join");
   }
 
-   printf("après thread\n");
+  while((res = (read(socket_ecoute,tmp,BUFFER_TCP_MESSAGE)) < BUFFER_TCP_MESSAGE)||(car == 'o')||(car == 'O')) {}
 
-   horloge_local[0] = horloge_local[1];
-   while(1)
-   {
+  if((car == 'o')||(car == 'O'))
+  {
+    status = MASTER;
+    msg = malloc(sizeof(status) + sizeof(int));
+    memcpy(msg,&local_user -> id,sizeof(int));
+    for(i = 0;i < (NB_CLIENT_MAX -1);i++)
+    {
+      write(socket_ecoute,msg,sizeof(int));
+    }
+  }
+/*
+  memcpy(&status,tmp,sizeof(status_t));
+  if(status == MASTER)
+  if(pthread_cancel(sca_thread) == -1)
+  {
+    perror("error killing scan thread");
+  }
+  */
+}
 
-   }
- }
-
-void* scan_thread(int socket_ecoute)
+void* scan_thread(char* caractere)
 {
-  char car='\0';
+  char car = '\0';
   do
   {
     printf("Commencer une nouvelle partie ? (o|N)\n");
     scanf("%c%*c",&car);
   }while((car != 'o')&&(car != 'O')&&(car != 'n')&&(car != 'N'));
-  pthread_exit(NULL);
+  *caractere = car;
+  pthread_exit(EXIT_SUCCESS);
 }

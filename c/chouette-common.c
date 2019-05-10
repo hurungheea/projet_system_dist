@@ -146,7 +146,7 @@ int send_multicast_msg(char *pseudo, struct sockaddr_in addr_local_tcp)
   return 0;
 }
 
-int reveive_id_list(int socket_ecoute,int *id, int* list_size, multicast_request_t **req_ptr)
+int receive_id_list(int socket_ecoute,int *id, int* list_size, multicast_request_t **req_ptr)
 {
   int socket_service, recv_tcp;
   int i;
@@ -160,7 +160,7 @@ int reveive_id_list(int socket_ecoute,int *id, int* list_size, multicast_request
   lg_addr = sizeof(struct sockaddr_in);
 
   /* attende de réponse du serveur */
-  if(listen(socket_ecoute,5) == -1)
+  if(listen(socket_ecoute,(NB_CLIENT_MAX -1)) == -1)
   {
     errno = 504;
     return -1;
