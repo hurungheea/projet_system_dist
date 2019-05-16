@@ -49,7 +49,7 @@ int creer_socket_tcp(int port)
   bzero((char*)&addr_local_tcp, sizeof(struct sockaddr_in));
   addr_local_tcp.sin_family = AF_INET;
   addr_local_tcp.sin_port = htons(port);
-  addr_local_tcp.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr_local_tcp.sin_addr = get_ip_addr();
 
   if(bind (sock, (struct sockaddr*) &addr_local_tcp, sizeof(addr_local_tcp))== -1)
   {
@@ -97,7 +97,7 @@ int socket_udp_multicast_server(struct sockaddr_in* addr)
   }
 
   reuse = 1;
-  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &reuse, sizeof(reuse)) == -1)
+  if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &reuse, sizeof(reuse)) == -1)
   {
      perror("Reusing ADDR failed");
      return 1;
@@ -111,7 +111,7 @@ int socket_udp_multicast_server(struct sockaddr_in* addr)
 
   mreq.imr_multiaddr.s_addr = inet_addr(MULTICAST_ADDR);
   mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-  if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)) == -1)
+  if(setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)) == -1)
   {
       perror("setsockopt");
       return 1;
@@ -155,7 +155,7 @@ int receive_id_list(int socket_ecoute,int *id, int* list_size, multicast_request
   char buffer[BUFFER_TCP_MESSAGE];
   status_t tampon;
 
-  bzero(&buffer,BUFFER_TCP_MESSAGE);
+  bzero(buffer,BUFFER_TCP_MESSAGE);
 
   lg_addr = sizeof(struct sockaddr_in);
 
@@ -188,7 +188,6 @@ int receive_id_list(int socket_ecoute,int *id, int* list_size, multicast_request
     case CONNECTED:
      printf("\033[32mVous êtes bien connecté.\033[0m\n");
      memcpy(id, buffer + sizeof(status_t),sizeof(int));
-     printf("received addr id : %d\n",*id);
      memcpy(list_size, buffer + sizeof(status_t) + sizeof(int),sizeof(int));
 
      if(*list_size > 0)
@@ -217,7 +216,7 @@ int receive_id_list(int socket_ecoute,int *id, int* list_size, multicast_request
   return 0;
 }
 
-int wait_client_tcp(joueur_t** j_list_ptr, int socket_ecoute, int list_size)
+int wait_client_tcp(joueur_t* j_list_ptr,int* nb_j_list, int socket_ecoute, int list_size, joueur_t local_user)
 {
   int i = 0;
   char tampon[BUFFER_TCP_MESSAGE];
@@ -225,57 +224,78 @@ int wait_client_tcp(joueur_t** j_list_ptr, int socket_ecoute, int list_size)
   socklen_t size_addr;
   int id_tampon;
   char pseudo[BUF_PSEUDO];
-
-  bzero(&tampon,BUFFER_TCP_MESSAGE);
-
+  char *buffy;
+  bzero(tampon,BUFFER_TCP_MESSAGE);
+  buffy = malloc(sizeof(int) + (BUF_PSEUDO * sizeof(char)));
   size_addr = sizeof(struct sockaddr_in);
+
+  /* Création du message */
+  memcpy(buffy,&local_user.id,sizeof(int));
+  memcpy(buffy + sizeof(int),&local_user.pseudo,BUF_PSEUDO);
 
   if(list_size == -1)
     list_size = 1;
 
   while(i < ((NB_CLIENT_MAX -1) - (list_size -1)))
   {
-   j_list_ptr[i] = calloc(1,sizeof(joueur_t));
-   j_list_ptr[i] -> socket_recv = accept(socket_ecoute,(struct sockaddr*) &addr_client, &size_addr);
-   if(j_list_ptr[i] -> socket_recv == -1)
+   j_list_ptr[*nb_j_list].socket_client = accept(socket_ecoute,(struct sockaddr*) &addr_client, &size_addr);
+   fcntl(j_list_ptr[*nb_j_list].socket_client, F_SETFL, O_NONBLOCK);
+   if(j_list_ptr[*nb_j_list].socket_client == -1)
    {
      perror("error accept");
    }
-   read(j_list_ptr[i]->socket_recv,&tampon,BUFFER_TCP_MESSAGE);
+   /* on lit les informations du client */
+   while(read(j_list_ptr[*nb_j_list].socket_client,tampon,BUFFER_TCP_MESSAGE) != BUFFER_TCP_MESSAGE) {}
+   /* on envoit nos informations au client */
+   write(j_list_ptr[*nb_j_list].socket_client,buffy,BUFFER_TCP_MESSAGE);
+   /* on traite les infos client */
    memcpy(&id_tampon,tampon,sizeof(int));
    memcpy(pseudo,tampon + sizeof(int),BUF_PSEUDO);
-   j_list_ptr[i] -> id = id_tampon;
-   strncpy(j_list_ptr[i] -> pseudo,pseudo,BUF_PSEUDO);
+   j_list_ptr[*nb_j_list].id = id_tampon;
+   strncpy(j_list_ptr[*nb_j_list].pseudo,pseudo,BUF_PSEUDO);
 
-
-   printf("pseudo : %s, %d\n",j_list_ptr[i] -> pseudo,j_list_ptr[i] -> id);
+   printf("à été ajouter à la liste : %s, index : %d\n",j_list_ptr[*nb_j_list].pseudo,i);
+   *nb_j_list += 1;
    i++;
   }
-  printf("3 clients sont connectés\n");
+  printf("%d clients sont connectés\n",((NB_CLIENT_MAX -1) - (list_size -1)));
   return 0;
 }
 
-int connect_all_client(joueur_t** j_list_ptr, multicast_request_t** req, joueur_t local_user,int list_size)
+int connect_all_client(joueur_t* j_list_ptr,int* nb_j_list, multicast_request_t** req, joueur_t local_user,int list_size, int socket_ecoute)
 {
-  int i;
+  int i,id;
   socklen_t lg_addr;
   char* buffy;
+  char tmp[BUFFER_TCP_MESSAGE];
+  char pseudo[BUF_PSEUDO];
 
   buffy = (char*)malloc(sizeof(int) + (BUF_PSEUDO * sizeof(char)));
   lg_addr = sizeof(struct sockaddr);
-
+  /* Création du message */
   memcpy(buffy,&local_user.id,sizeof(int));
   memcpy(buffy + sizeof(int),&local_user.pseudo,BUF_PSEUDO);
 
   for(i = 0; i < (list_size-1); i++)
   {
-    j_list_ptr[i] = calloc(1,sizeof(joueur_t));
-    j_list_ptr[i] -> socket_send = creer_socket_tcp(0);
-    if(connect(j_list_ptr[i] -> socket_send,(struct sockaddr*)&req[i]->addr_client,lg_addr))
+    j_list_ptr[*nb_j_list].socket_client = creer_socket_tcp(0);
+
+    if(connect(j_list_ptr[*nb_j_list].socket_client,(struct sockaddr*)&req[i]->addr_client,lg_addr))
     {
       perror("error connect");
     }
-    write(j_list_ptr[i] -> socket_send,buffy,BUFFER_TCP_MESSAGE);
+    fcntl(j_list_ptr[*nb_j_list].socket_client, F_SETFL, O_NONBLOCK);
+    /* On envoi le msg */
+    write(j_list_ptr[*nb_j_list].socket_client,buffy,BUFFER_TCP_MESSAGE);
+    /* On receptionne les informations du client */
+    while(read(j_list_ptr[*nb_j_list].socket_client,tmp,BUFFER_TCP_MESSAGE) != BUFFER_TCP_MESSAGE) {}
+    memcpy(&id,tmp,sizeof(int));
+    memcpy(pseudo,tmp + sizeof(int),BUF_PSEUDO);
+    /* On stocke les informations contenue dans MSG */
+    j_list_ptr[i].id = id;
+    strncpy(j_list_ptr[*nb_j_list].pseudo,pseudo,BUF_PSEUDO);
+    printf("connection à %s, id %d\n",j_list_ptr[*nb_j_list].pseudo,*nb_j_list);
+    *nb_j_list += 1;
   }
   return 0;
 }
@@ -352,4 +372,24 @@ int get_client_id()
 {
   static int id = 0;
   return (++id);
+}
+
+struct in_addr get_ip_addr()
+{
+  struct ifaddrs *addrs,*tmp;
+  struct sockaddr_in *pAddr;
+  getifaddrs(&addrs);
+  tmp = addrs;
+
+  while(tmp)
+  {
+    if(tmp -> ifa_addr && tmp -> ifa_addr -> sa_family == AF_INET)
+    {
+      pAddr = (struct sockaddr_in*)tmp->ifa_addr;
+    }
+    tmp = tmp->ifa_next;
+  }
+
+  freeifaddrs(addrs);
+  return (pAddr -> sin_addr);
 }

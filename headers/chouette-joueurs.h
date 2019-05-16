@@ -15,8 +15,7 @@ typedef struct
 {
   int id;
   int score;
-  int socket_send;
-  int socket_recv;
+  int socket_client;
   des_t des[NB_DES];
   status_t status;
   char pseudo[BUF_PSEUDO];

@@ -10,7 +10,7 @@ $(exes): chouette-server.c  chouette-des.o chouette-joueurs.o chouette-common.o
 	$(CC) $(version) $(gflags) -g -o $(exes) chouette-server.c objets/chouette-des.o objets/chouette-joueurs.o objets/chouette-common.o
 
 $(exec): chouette-client.c  chouette-des.o chouette-joueurs.o chouette-common.o
-	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c objets/chouette-des.o objets/chouette-joueurs.o objets/chouette-common.o -lpthread
+	$(CC) $(version) $(gflags) -g -o $(exec) chouette-client.c objets/chouette-des.o objets/chouette-joueurs.o objets/chouette-common.o -lpthread -D_REENTRANT
 
 chouette-des.o: c/chouette-des.c
 	$(CC) $(version) $(gflags) -g -c -o objets/chouette-des.o c/chouette-des.c
